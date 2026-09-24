@@ -5,6 +5,11 @@ import { AuthProvider } from "./context/AuthContext";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { AdminLayout } from "./layouts/AdminLayout";
 import { LoginPage } from "./pages/LoginPage";
+import { DashboardPage } from "./pages/DashboardPage";
+import { BusinessesPage } from "./pages/BusinessesPage";
+import { BusinessDetailPage } from "./pages/BusinessDetailPage";
+import { ComplaintsPage } from "./pages/ComplaintsPage";
+import { AuditLogsPage } from "./pages/AuditLogsPage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -35,11 +40,14 @@ export function App() {
               {/* Protected Admin Routes */}
               <Route element={<ProtectedRoute />}>
                 <Route element={<AdminLayout />}>
-                  <Route path="/dashboard" element={<h3>Dashboard View (Step 4.3)</h3>} />
-                  <Route path="/businesses" element={<h3>Businesses View (Step 4.4)</h3>} />
-                  <Route path="/businesses/:id" element={<h3>Business Details View (Step 4.5)</h3>} />
-                  <Route path="/complaints" element={<h3>Complaints View (Step 4.6)</h3>} />
-                  <Route path="/audit-logs" element={<h3>Audit Logs View (Step 4.7)</h3>} />
+                  <Route path="/dashboard" element={<DashboardPage />} />
+                  <Route path="/businesses" element={<BusinessesPage />} />
+                  <Route
+                    path="/businesses/:id"
+                    element={<BusinessDetailPage />}
+                  />
+                  <Route path="/complaints" element={<ComplaintsPage />} />
+                  <Route path="/audit-logs" element={<AuditLogsPage />} />
                 </Route>
               </Route>
 
