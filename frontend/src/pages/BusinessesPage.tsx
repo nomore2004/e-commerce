@@ -5,14 +5,12 @@ import {
   Select,
   Button,
   Space,
-  Typography,
   Card,
   Alert,
 } from "antd";
 import type { TableProps } from "antd";
 import {
   SearchOutlined,
-  EyeOutlined,
   ReloadOutlined,
   FilterOutlined,
 } from "@ant-design/icons";
@@ -21,8 +19,6 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { getBusinesses } from "../api/admin";
 import { StatusTag } from "../components/StatusTag";
 import type { BusinessRead, BusinessStatus } from "../types/api";
-
-const { Title, Text } = Typography;
 
 export const BusinessesPage: React.FC = () => {
   const navigate = useNavigate();
@@ -47,7 +43,7 @@ export const BusinessesPage: React.FC = () => {
     queryFn: () => getBusinesses({ status: statusFilter, limit: 100 }),
   });
 
-  // Client-side filtering for search text and type filter
+  // Client-side filtering
   const filteredData = businesses.filter((b) => {
     const matchesSearch =
       searchText.trim() === "" ||
@@ -59,7 +55,6 @@ export const BusinessesPage: React.FC = () => {
     return matchesSearch && matchesType;
   });
 
-  // Unique business types for filter dropdown
   const businessTypes = Array.from(
     new Set(businesses.map((b) => b.business_type))
   );
@@ -80,24 +75,28 @@ export const BusinessesPage: React.FC = () => {
       key: "name",
       render: (name: string, record) => (
         <div>
-          <Text strong>{name}</Text>
-          <br />
-          <Text type="secondary" style={{ fontSize: 12 }}>
+          <span style={{ fontWeight: 600, color: "#111827" }}>{name}</span>
+          <div style={{ fontSize: 11, color: "#9ca3af" }}>
             ID: {record.id.substring(0, 8)}...
-          </Text>
+          </div>
         </div>
       ),
     },
     {
-      title: "Type",
+      title: "Classification",
       dataIndex: "business_type",
       key: "business_type",
+      render: (type: string) => <span style={{ color: "#4b5563" }}>{type}</span>,
     },
     {
-      title: "GST Number",
+      title: "GSTIN",
       dataIndex: "gst_no",
       key: "gst_no",
-      render: (gst: string) => <code>{gst}</code>,
+      render: (gst: string) => (
+        <code style={{ fontSize: 12, backgroundColor: "#f3f4f6", padding: "2px 6px", borderRadius: 4 }}>
+          {gst}
+        </code>
+      ),
     },
     {
       title: "Status",
@@ -106,58 +105,62 @@ export const BusinessesPage: React.FC = () => {
       render: (status: BusinessStatus) => <StatusTag status={status} />,
     },
     {
-      title: "Created At",
+      title: "Created Date",
       dataIndex: "created_at",
       key: "created_at",
-      render: (date: string) =>
-        new Date(date).toLocaleDateString("en-IN", {
-          year: "numeric",
-          month: "short",
-          day: "numeric",
-        }),
+      render: (date: string) => (
+        <span style={{ color: "#6b7280", fontSize: 12 }}>
+          {new Date(date).toLocaleDateString("en-IN", {
+            year: "numeric",
+            month: "short",
+            day: "numeric",
+          })}
+        </span>
+      ),
     },
     {
-      title: "Action",
+      title: "",
       key: "action",
+      align: "right",
       render: (_, record) => (
         <Button
-          type="primary"
-          ghost
-          icon={<EyeOutlined />}
+          type="default"
           size="small"
           onClick={() => navigate(`/businesses/${record.id}`)}
+          style={{ fontSize: 12 }}
         >
-          View & Verify
+          Review Details
         </Button>
       ),
     },
   ];
 
   return (
-    <Space direction="vertical" size="large" style={{ width: "100%" }}>
+    <div style={{ width: "100%" }}>
+      {/* Header */}
       <div
         style={{
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          flexWrap: "wrap",
-          gap: 16,
+          marginBottom: 16,
         }}
       >
         <div>
-          <Title level={3} style={{ margin: 0 }}>
+          <h1 style={{ fontSize: 24, fontWeight: 600, margin: "0 0 2px 0", color: "#111827", letterSpacing: "-0.02em" }}>
             Registered Businesses
-          </Title>
-          <Text type="secondary">
-            Verify, approve, or reject vendor and buyer GST onboarding profiles
-          </Text>
+          </h1>
+          <span style={{ fontSize: 13, color: "#6b7280" }}>
+            Manage supplier onboarding, GST verification, and compliance statuses
+          </span>
         </div>
         <Button
           icon={<ReloadOutlined />}
+          size="small"
           onClick={() => refetch()}
           loading={isLoading}
         >
-          Refresh List
+          Refresh
         </Button>
       </div>
 
@@ -167,41 +170,45 @@ export const BusinessesPage: React.FC = () => {
           message="Could not load businesses"
           description={error instanceof Error ? error.message : "Error"}
           showIcon
+          style={{ marginBottom: 16 }}
         />
       )}
 
       {/* Filter Toolbar */}
-      <Card size="small">
-        <Space wrap size="middle">
+      <Card style={{ marginBottom: 16 }} styles={{ body: { padding: "12px 16px" } }}>
+        <Space wrap size="small">
           <Input
-            placeholder="Search by business name or GST..."
-            prefix={<SearchOutlined />}
+            placeholder="Search business name or GST..."
+            prefix={<SearchOutlined style={{ color: "#9ca3af" }} />}
             value={searchText}
             onChange={(e) => setSearchText(e.target.value)}
-            style={{ width: 300 }}
+            style={{ width: 260 }}
+            size="small"
             allowClear
           />
 
           <Select
-            placeholder="Filter by Status"
+            placeholder="Status"
             value={statusFilter}
             onChange={handleStatusChange}
             allowClear
-            style={{ width: 180 }}
+            size="small"
+            style={{ width: 150 }}
             options={[
               { label: "All Statuses", value: undefined },
-              { label: "Pending Verification", value: "pending" },
-              { label: "Verified Suppliers", value: "verified" },
-              { label: "Rejected Profiles", value: "rejected" },
+              { label: "Pending", value: "pending" },
+              { label: "Verified", value: "verified" },
+              { label: "Rejected", value: "rejected" },
             ]}
           />
 
           <Select
-            placeholder="Filter by Business Type"
+            placeholder="Type"
             value={typeFilter}
             onChange={(val) => setTypeFilter(val)}
             allowClear
-            style={{ width: 200 }}
+            size="small"
+            style={{ width: 160 }}
             options={[
               { label: "All Types", value: undefined },
               ...businessTypes.map((t) => ({ label: t, value: t })),
@@ -210,6 +217,7 @@ export const BusinessesPage: React.FC = () => {
 
           {(searchText || statusFilter || typeFilter) && (
             <Button
+              size="small"
               icon={<FilterOutlined />}
               onClick={() => {
                 setSearchText("");
@@ -217,26 +225,29 @@ export const BusinessesPage: React.FC = () => {
                 setTypeFilter(undefined);
               }}
             >
-              Reset Filters
+              Reset
             </Button>
           )}
         </Space>
       </Card>
 
-      {/* Ant Design Table with Pagination */}
-      <Table
-        dataSource={filteredData}
-        columns={columns}
-        rowKey="id"
-        loading={isLoading}
-        pagination={{
-          defaultPageSize: 10,
-          showSizeChanger: true,
-          pageSizeOptions: ["10", "20", "50"],
-          showTotal: (total, range) =>
-            `${range[0]}-${range[1]} of ${total} businesses`,
-        }}
-      />
-    </Space>
+      {/* Table */}
+      <Card styles={{ body: { padding: 0 } }}>
+        <Table
+          dataSource={filteredData}
+          columns={columns}
+          rowKey="id"
+          loading={isLoading}
+          size="middle"
+          pagination={{
+            defaultPageSize: 10,
+            showSizeChanger: true,
+            pageSizeOptions: ["10", "20", "50"],
+            showTotal: (total, range) =>
+              `${range[0]}-${range[1]} of ${total} businesses`,
+          }}
+        />
+      </Card>
+    </div>
   );
 };

@@ -4,20 +4,17 @@ import {
   Descriptions,
   Button,
   Space,
-  Typography,
   Modal,
   Form,
   Input,
   Alert,
   Skeleton,
   message,
-  Divider,
 } from "antd";
 import {
   CheckCircleOutlined,
   CloseCircleOutlined,
   ArrowLeftOutlined,
-  ShopOutlined,
   ExclamationCircleOutlined,
 } from "@ant-design/icons";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -26,7 +23,6 @@ import { getBusinessById, verifyBusiness } from "../api/admin";
 import { StatusTag } from "../components/StatusTag";
 import type { BusinessVerifyRequest } from "../types/api";
 
-const { Title, Text, Paragraph } = Typography;
 const { TextArea } = Input;
 
 export const BusinessDetailPage: React.FC = () => {
@@ -47,14 +43,12 @@ export const BusinessDetailPage: React.FC = () => {
     enabled: !!id,
   });
 
-  // Verification Mutation (Approve or Reject)
   const verifyMutation = useMutation({
     mutationFn: (payload: BusinessVerifyRequest) => verifyBusiness(id!, payload),
     onSuccess: (updated) => {
       message.success(
         `Business marked as ${updated.status.toUpperCase()} successfully.`
       );
-      // Condition 5: Invalidate queries after every mutation
       queryClient.invalidateQueries({ queryKey: ["business", id] });
       queryClient.invalidateQueries({ queryKey: ["businesses"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard-stats"] });
@@ -95,13 +89,13 @@ export const BusinessDetailPage: React.FC = () => {
   if (isError) {
     return (
       <Space direction="vertical" style={{ width: "100%" }}>
-        <Button icon={<ArrowLeftOutlined />} onClick={() => navigate("/businesses")}>
-          Back to Businesses
+        <Button icon={<ArrowLeftOutlined />} size="small" onClick={() => navigate("/businesses")}>
+          Back
         </Button>
         <Alert
           type="error"
           message="Business not found"
-          description={error instanceof Error ? error.message : "Failed to load details"}
+          description={error instanceof Error ? error.message : "Failed to load"}
           showIcon
         />
       </Space>
@@ -109,29 +103,36 @@ export const BusinessDetailPage: React.FC = () => {
   }
 
   return (
-    <Space direction="vertical" size="large" style={{ width: "100%" }}>
+    <div style={{ width: "100%" }}>
       {/* Header Bar */}
       <div
         style={{
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
+          marginBottom: 16,
           flexWrap: "wrap",
-          gap: 16,
+          gap: 12,
         }}
       >
-        <Space>
+        <Space size="middle">
           <Button
             icon={<ArrowLeftOutlined />}
+            size="small"
             onClick={() => navigate("/businesses")}
           >
             Back
           </Button>
           <div>
-            <Title level={3} style={{ margin: 0 }}>
-              {business ? business.name : "Business Verification Details"}
-            </Title>
-            <Text type="secondary">Review GST and compliance documentation</Text>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <h1 style={{ fontSize: 22, fontWeight: 600, margin: 0, color: "#111827", letterSpacing: "-0.02em" }}>
+                {business ? business.name : "Business Profile"}
+              </h1>
+              {business && <StatusTag status={business.status} />}
+            </div>
+            <span style={{ fontSize: 13, color: "#6b7280" }}>
+              Supplier verification & compliance dossier
+            </span>
           </div>
         </Space>
 
@@ -140,23 +141,25 @@ export const BusinessDetailPage: React.FC = () => {
             {business.status !== "verified" && (
               <Button
                 type="primary"
+                size="small"
                 icon={<CheckCircleOutlined />}
                 onClick={handleApprove}
                 loading={verifyMutation.isPending}
-                style={{ backgroundColor: "#52c41a" }}
+                style={{ backgroundColor: "#16a34a", borderColor: "#16a34a" }}
               >
-                Approve Verification
+                Approve Supplier
               </Button>
             )}
 
             {business.status !== "rejected" && (
               <Button
                 danger
+                size="small"
                 icon={<CloseCircleOutlined />}
                 onClick={() => setRejectModalOpen(true)}
                 loading={verifyMutation.isPending}
               >
-                Reject Verification
+                Reject Supplier
               </Button>
             )}
           </Space>
@@ -165,10 +168,10 @@ export const BusinessDetailPage: React.FC = () => {
 
       {isLoading ? (
         <Card>
-          <Skeleton active paragraph={{ rows: 8 }} />
+          <Skeleton active paragraph={{ rows: 6 }} />
         </Card>
       ) : business ? (
-        <>
+        <Space direction="vertical" size={16} style={{ width: "100%" }}>
           {/* Rejection Alert if Rejected */}
           {business.status === "rejected" && (
             <Alert
@@ -183,67 +186,54 @@ export const BusinessDetailPage: React.FC = () => {
           )}
 
           <Card
-            title={
-              <Space>
-                <ShopOutlined />
-                <span>Onboarding Profile Overview</span>
-              </Space>
-            }
-            extra={<StatusTag status={business.status} />}
+            title="Entity Dossier"
+            styles={{ body: { padding: 0 } }}
           >
-            <Descriptions bordered column={{ xs: 1, sm: 2, md: 3 }}>
-              <Descriptions.Item label="Company Legal Name" span={2}>
-                <Text strong>{business.name}</Text>
+            <Descriptions bordered size="small" column={{ xs: 1, sm: 2, md: 3 }}>
+              <Descriptions.Item label="Legal Entity Name" span={2}>
+                <span style={{ fontWeight: 600 }}>{business.name}</span>
               </Descriptions.Item>
-              <Descriptions.Item label="Current Status">
+              <Descriptions.Item label="Verification Status">
                 <StatusTag status={business.status} />
               </Descriptions.Item>
 
               <Descriptions.Item label="Business Classification">
                 {business.business_type}
               </Descriptions.Item>
-              <Descriptions.Item label="GST Identification Number (GSTIN)">
-                <code>{business.gst_no}</code>
+              <Descriptions.Item label="GST Identification (GSTIN)">
+                <code style={{ fontSize: 12, backgroundColor: "#f3f4f6", padding: "2px 6px", borderRadius: 4 }}>
+                  {business.gst_no}
+                </code>
               </Descriptions.Item>
-              <Descriptions.Item label="Registration Date">
+              <Descriptions.Item label="Submission Date">
                 {new Date(business.created_at).toLocaleString("en-IN")}
               </Descriptions.Item>
 
-              <Descriptions.Item label="Registered Physical Address" span={3}>
-                <Paragraph style={{ margin: 0 }}>{business.address}</Paragraph>
+              <Descriptions.Item label="Registered Address" span={3}>
+                <div style={{ color: "#374151" }}>{business.address}</div>
               </Descriptions.Item>
 
               <Descriptions.Item label="Verified By (Admin UUID)">
-                {business.verified_by || "Pending Verification"}
+                {business.verified_by ? (
+                  <code style={{ fontSize: 12 }}>{business.verified_by}</code>
+                ) : (
+                  <span style={{ color: "#9ca3af" }}>Pending</span>
+                )}
               </Descriptions.Item>
-              <Descriptions.Item label="Verified At">
+              <Descriptions.Item label="Verified Date">
                 {business.verified_at
                   ? new Date(business.verified_at).toLocaleString("en-IN")
-                  : "N/A"}
+                  : "—"}
               </Descriptions.Item>
-              <Descriptions.Item label="Last Profile Update">
+              <Descriptions.Item label="Last Update">
                 {new Date(business.updated_at).toLocaleString("en-IN")}
               </Descriptions.Item>
             </Descriptions>
-
-            <Divider />
-
-            <div style={{ background: "#fafafa", padding: 16, borderRadius: 8 }}>
-              <Title level={5} style={{ margin: "0 0 8px 0" }}>
-                ProcureX Compliance & Verification Rules
-              </Title>
-              <Text type="secondary">
-                Approving this company will authorize them for B2B procurement,
-                invoicing, and supplier directories. Rejecting requires an explicit
-                reason that will be recorded in the audit logs and communicated to the
-                supplier.
-              </Text>
-            </div>
           </Card>
-        </>
+        </Space>
       ) : null}
 
-      {/* Reject Modal Requiring Reason */}
+      {/* Reject Modal */}
       <Modal
         title="Reject Business Verification"
         open={rejectModalOpen}
@@ -257,24 +247,16 @@ export const BusinessDetailPage: React.FC = () => {
           onFinish={handleRejectSubmit}
           initialValues={{ rejection_reason: "" }}
         >
-          <Paragraph type="secondary">
-            Please specify why the verification for{" "}
-            <strong>{business?.name}</strong> is being rejected. This reason is
-            mandatory.
-          </Paragraph>
+          <div style={{ fontSize: 13, color: "#4b5563", marginBottom: 12 }}>
+            Specify mandatory reason for rejecting <strong>{business?.name}</strong>:
+          </div>
 
           <Form.Item
             name="rejection_reason"
             label="Rejection Reason"
             rules={[
-              {
-                required: true,
-                message: "Please enter a valid rejection reason",
-              },
-              {
-                min: 10,
-                message: "Reason must be at least 10 characters long",
-              },
+              { required: true, message: "Please provide a rejection reason" },
+              { min: 10, message: "Minimum 10 characters required" },
             ]}
           >
             <TextArea
@@ -283,11 +265,14 @@ export const BusinessDetailPage: React.FC = () => {
             />
           </Form.Item>
 
-          <div style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}>
-            <Button onClick={() => setRejectModalOpen(false)}>Cancel</Button>
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
+            <Button size="small" onClick={() => setRejectModalOpen(false)}>
+              Cancel
+            </Button>
             <Button
               danger
               type="primary"
+              size="small"
               htmlType="submit"
               loading={verifyMutation.isPending}
             >
@@ -296,6 +281,6 @@ export const BusinessDetailPage: React.FC = () => {
           </div>
         </Form>
       </Modal>
-    </Space>
+    </div>
   );
 };

@@ -2,9 +2,7 @@ import React, { useState } from "react";
 import {
   Table,
   Select,
-  Typography,
   Card,
-  Space,
   Alert,
   Modal,
   Form,
@@ -19,7 +17,6 @@ import { getComplaints, updateComplaintStatus } from "../api/admin";
 import { StatusTag } from "../components/StatusTag";
 import type { ComplaintRead, ComplaintStatus } from "../types/api";
 
-const { Title, Text } = Typography;
 const { TextArea } = Input;
 
 export const ComplaintsPage: React.FC = () => {
@@ -28,7 +25,6 @@ export const ComplaintsPage: React.FC = () => {
     undefined
   );
 
-  // Modal state for adding resolution notes when closing/updating a complaint
   const [resolutionModalOpen, setResolutionModalOpen] = useState(false);
   const [selectedComplaint, setSelectedComplaint] =
     useState<ComplaintRead | null>(null);
@@ -62,7 +58,6 @@ export const ComplaintsPage: React.FC = () => {
       message.success(
         `Complaint updated to ${updated.status.toUpperCase()} successfully.`
       );
-      // Condition 5: Invalidate queries after every mutation
       queryClient.invalidateQueries({ queryKey: ["complaints"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard-stats"] });
       queryClient.invalidateQueries({ queryKey: ["audit-logs"] });
@@ -110,29 +105,38 @@ export const ComplaintsPage: React.FC = () => {
 
   const columns: TableProps<ComplaintRead>["columns"] = [
     {
-      title: "Complaint Title",
+      title: "Complaint",
       dataIndex: "title",
       key: "title",
       render: (title: string, record) => (
-        <div style={{ maxWidth: 300 }}>
-          <Text strong>{title}</Text>
-          <br />
-          <Text type="secondary" ellipsis style={{ fontSize: 13 }}>
+        <div style={{ maxWidth: 320 }}>
+          <div style={{ fontWeight: 600, color: "#111827" }}>{title}</div>
+          <div
+            style={{
+              fontSize: 12,
+              color: "#6b7280",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            }}
+          >
             {record.description}
-          </Text>
+          </div>
         </div>
       ),
     },
     {
-      title: "Target Business ID",
+      title: "Target Business",
       dataIndex: "business_id",
       key: "business_id",
       render: (bizId: string) => (
-        <code style={{ fontSize: 12 }}>{bizId.substring(0, 8)}...</code>
+        <code style={{ fontSize: 12, backgroundColor: "#f3f4f6", padding: "2px 6px", borderRadius: 4 }}>
+          {bizId.substring(0, 8)}
+        </code>
       ),
     },
     {
-      title: "Current Status",
+      title: "Status",
       dataIndex: "status",
       key: "status",
       render: (status: ComplaintStatus) => <StatusTag status={status} />,
@@ -143,32 +147,36 @@ export const ComplaintsPage: React.FC = () => {
       key: "resolution_notes",
       render: (notes: string | null) =>
         notes ? (
-          <Text type="secondary" italic style={{ fontSize: 12 }}>
+          <span style={{ color: "#4b5563", fontSize: 12, fontStyle: "italic" }}>
             "{notes}"
-          </Text>
+          </span>
         ) : (
-          <Text type="secondary">—</Text>
+          <span style={{ color: "#9ca3af" }}>—</span>
         ),
     },
     {
       title: "Filed At",
       dataIndex: "created_at",
       key: "created_at",
-      render: (date: string) =>
-        new Date(date).toLocaleDateString("en-IN", {
-          year: "numeric",
-          month: "short",
-          day: "numeric",
-        }),
+      render: (date: string) => (
+        <span style={{ color: "#6b7280", fontSize: 12 }}>
+          {new Date(date).toLocaleDateString("en-IN", {
+            month: "short",
+            day: "numeric",
+          })}
+        </span>
+      ),
     },
     {
-      title: "Update Status",
+      title: "Update",
       key: "update_status",
+      align: "right",
       render: (_, record) => (
         <Select
           value={record.status}
           onChange={(newVal) => handleStatusSelect(record, newVal)}
-          style={{ width: 150 }}
+          style={{ width: 140 }}
+          size="small"
           options={[
             { label: "Open", value: "open" },
             { label: "Under Review", value: "under_review" },
@@ -181,30 +189,31 @@ export const ComplaintsPage: React.FC = () => {
   ];
 
   return (
-    <Space direction="vertical" size="large" style={{ width: "100%" }}>
+    <div style={{ width: "100%" }}>
+      {/* Header */}
       <div
         style={{
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          flexWrap: "wrap",
-          gap: 16,
+          marginBottom: 16,
         }}
       >
         <div>
-          <Title level={3} style={{ margin: 0 }}>
+          <h1 style={{ fontSize: 24, fontWeight: 600, margin: "0 0 2px 0", color: "#111827", letterSpacing: "-0.02em" }}>
             Dispute & Complaints Moderation
-          </Title>
-          <Text type="secondary">
-            Oversee supplier order disputes, non-compliance, and quality grievances
-          </Text>
+          </h1>
+          <span style={{ fontSize: 13, color: "#6b7280" }}>
+            Active buyer and vendor grievances, damaged inventory, and contract claims
+          </span>
         </div>
         <Button
           icon={<ReloadOutlined />}
+          size="small"
           onClick={() => refetch()}
           loading={isLoading}
         >
-          Refresh Complaints
+          Refresh
         </Button>
       </div>
 
@@ -214,41 +223,44 @@ export const ComplaintsPage: React.FC = () => {
           message="Could not load complaints"
           description={error instanceof Error ? error.message : "Error"}
           showIcon
+          style={{ marginBottom: 16 }}
         />
       )}
 
       {/* Filter Toolbar */}
-      <Card size="small">
-        <Space wrap>
-          <Select
-            placeholder="Filter by Status"
-            value={statusFilter}
-            onChange={(val) => setStatusFilter(val)}
-            allowClear
-            style={{ width: 200 }}
-            options={[
-              { label: "All Complaints", value: undefined },
-              { label: "Open", value: "open" },
-              { label: "Under Review", value: "under_review" },
-              { label: "Resolved", value: "resolved" },
-              { label: "Dismissed", value: "dismissed" },
-            ]}
-          />
-        </Space>
+      <Card style={{ marginBottom: 16 }} styles={{ body: { padding: "12px 16px" } }}>
+        <Select
+          placeholder="Filter by Status"
+          value={statusFilter}
+          onChange={(val) => setStatusFilter(val)}
+          allowClear
+          size="small"
+          style={{ width: 180 }}
+          options={[
+            { label: "All Complaints", value: undefined },
+            { label: "Open", value: "open" },
+            { label: "Under Review", value: "under_review" },
+            { label: "Resolved", value: "resolved" },
+            { label: "Dismissed", value: "dismissed" },
+          ]}
+        />
       </Card>
 
-      <Table
-        dataSource={complaints}
-        columns={columns}
-        rowKey="id"
-        loading={isLoading}
-        pagination={{
-          defaultPageSize: 10,
-          showSizeChanger: true,
-          showTotal: (total, range) =>
-            `${range[0]}-${range[1]} of ${total} complaints`,
-        }}
-      />
+      <Card styles={{ body: { padding: 0 } }}>
+        <Table
+          dataSource={complaints}
+          columns={columns}
+          rowKey="id"
+          loading={isLoading}
+          size="middle"
+          pagination={{
+            defaultPageSize: 10,
+            showSizeChanger: true,
+            showTotal: (total, range) =>
+              `${range[0]}-${range[1]} of ${total} complaints`,
+          }}
+        />
+      </Card>
 
       {/* Resolution Notes Modal */}
       <Modal
@@ -283,8 +295,9 @@ export const ComplaintsPage: React.FC = () => {
             />
           </Form.Item>
 
-          <div style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}>
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
             <Button
+              size="small"
               onClick={() => {
                 setResolutionModalOpen(false);
                 setSelectedComplaint(null);
@@ -295,6 +308,7 @@ export const ComplaintsPage: React.FC = () => {
             </Button>
             <Button
               type="primary"
+              size="small"
               htmlType="submit"
               loading={statusMutation.isPending}
             >
@@ -303,6 +317,6 @@ export const ComplaintsPage: React.FC = () => {
           </div>
         </Form>
       </Modal>
-    </Space>
+    </div>
   );
 };

@@ -26,8 +26,31 @@ export function App() {
       <ConfigProvider
         theme={{
           token: {
-            colorPrimary: "#1677ff",
-            borderRadius: 6,
+            colorPrimary: "#2563eb",
+            borderRadius: 8,
+            fontSize: 14,
+            fontFamily: "'Inter', system-ui, -apple-system, sans-serif",
+            colorText: "#111827",
+            colorTextSecondary: "#6b7280",
+            colorBorder: "#e5e7eb",
+            colorBgLayout: "#f5f6f8",
+          },
+          components: {
+            Card: {
+              paddingLG: 16,
+              boxShadowTertiary: "none",
+            },
+            Table: {
+              cellPaddingBlock: 10,
+              cellPaddingInline: 14,
+              headerBg: "#f9fafb",
+              headerColor: "#4b5563",
+              rowHoverBg: "#f9fafb",
+            },
+            Button: {
+              controlHeight: 34,
+              borderRadius: 6,
+            },
           },
         }}
       >

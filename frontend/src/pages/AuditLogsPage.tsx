@@ -1,20 +1,16 @@
 import React, { useState } from "react";
 import {
   Table,
-  Typography,
-  Space,
-  Alert,
   Button,
-  Tag,
   Modal,
+  Alert,
+  Card,
 } from "antd";
 import type { TableProps } from "antd";
 import { ReloadOutlined, CodeOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
 import { getAuditLogs } from "../api/admin";
 import type { AuditLogRead } from "../types/api";
-
-const { Title, Text } = Typography;
 
 export const AuditLogsPage: React.FC = () => {
   const [selectedDetails, setSelectedDetails] = useState<Record<
@@ -33,107 +29,124 @@ export const AuditLogsPage: React.FC = () => {
     queryFn: () => getAuditLogs({ limit: 100 }),
   });
 
-  const getActionColor = (action: string) => {
-    if (action.includes("VERIFIED")) return "success";
-    if (action.includes("REJECTED")) return "error";
-    if (action.includes("LOGIN")) return "blue";
-    if (action.includes("STATUS")) return "purple";
-    return "default";
-  };
-
   const columns: TableProps<AuditLogRead>["columns"] = [
     {
       title: "Timestamp",
       dataIndex: "created_at",
       key: "created_at",
-      render: (date: string) =>
-        new Date(date).toLocaleString("en-IN", {
-          year: "numeric",
-          month: "short",
-          day: "numeric",
-          hour: "2-digit",
-          minute: "2-digit",
-          second: "2-digit",
-        }),
+      render: (date: string) => (
+        <span style={{ fontSize: 12, color: "#6b7280" }}>
+          {new Date(date).toLocaleString("en-IN", {
+            month: "short",
+            day: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+          })}
+        </span>
+      ),
     },
     {
       title: "Action Performed",
       dataIndex: "action",
       key: "action",
       render: (action: string) => (
-        <Tag color={getActionColor(action)}>{action}</Tag>
+        <span
+          style={{
+            fontFamily: "ui-monospace, SFMono-Regular, monospace",
+            fontSize: 12,
+            fontWeight: 600,
+            color: action.includes("REJECTED")
+              ? "#dc2626"
+              : action.includes("VERIFIED")
+              ? "#16a34a"
+              : "#2563eb",
+            backgroundColor: "#f3f4f6",
+            padding: "2px 6px",
+            borderRadius: 4,
+          }}
+        >
+          {action}
+        </span>
       ),
     },
     {
-      title: "Target Entity",
+      title: "Entity",
       dataIndex: "target_type",
       key: "target_type",
-      render: (type: string) => <Tag>{type.toUpperCase()}</Tag>,
+      render: (type: string) => (
+        <span style={{ fontSize: 12, color: "#4b5563", textTransform: "uppercase" }}>
+          {type}
+        </span>
+      ),
     },
     {
       title: "Target ID",
       dataIndex: "target_id",
       key: "target_id",
       render: (id: string) => (
-        <code style={{ fontSize: 12 }}>
+        <code style={{ fontSize: 12, backgroundColor: "#f3f4f6", padding: "2px 6px", borderRadius: 4 }}>
           {id.length > 12 ? `${id.substring(0, 10)}...` : id}
         </code>
       ),
     },
     {
-      title: "Actor (Admin ID)",
+      title: "Actor",
       dataIndex: "actor_id",
       key: "actor_id",
       render: (actor: string | null) =>
         actor ? (
-          <code style={{ fontSize: 12 }}>{actor.substring(0, 8)}...</code>
+          <code style={{ fontSize: 12, color: "#374151" }}>{actor.substring(0, 8)}</code>
         ) : (
-          <Text type="secondary">SYSTEM</Text>
+          <span style={{ fontSize: 12, color: "#9ca3af" }}>SYSTEM</span>
         ),
     },
     {
-      title: "Event Payload",
+      title: "Payload",
       key: "details",
+      align: "right",
       render: (_, record) =>
         record.details ? (
           <Button
             size="small"
             icon={<CodeOutlined />}
             onClick={() => setSelectedDetails(record.details)}
+            style={{ fontSize: 12 }}
           >
-            Inspect JSON
+            Inspect
           </Button>
         ) : (
-          <Text type="secondary">—</Text>
+          <span style={{ color: "#9ca3af" }}>—</span>
         ),
     },
   ];
 
   return (
-    <Space direction="vertical" size="large" style={{ width: "100%" }}>
+    <div style={{ width: "100%" }}>
+      {/* Header */}
       <div
         style={{
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          flexWrap: "wrap",
-          gap: 16,
+          marginBottom: 16,
         }}
       >
         <div>
-          <Title level={3} style={{ margin: 0 }}>
-            Compliance & System Audit Trail
-          </Title>
-          <Text type="secondary">
-            Immutable log of all administrative approvals, rejections, and state modifications
-          </Text>
+          <h1 style={{ fontSize: 24, fontWeight: 600, margin: "0 0 2px 0", color: "#111827", letterSpacing: "-0.02em" }}>
+            Compliance & Audit Trail
+          </h1>
+          <span style={{ fontSize: 13, color: "#6b7280" }}>
+            Immutable administrative logs required by ProcureX verification audit standards
+          </span>
         </div>
         <Button
           icon={<ReloadOutlined />}
+          size="small"
           onClick={() => refetch()}
           loading={isLoading}
         >
-          Refresh Logs
+          Refresh
         </Button>
       </div>
 
@@ -143,22 +156,26 @@ export const AuditLogsPage: React.FC = () => {
           message="Could not load audit logs"
           description={error instanceof Error ? error.message : "Error"}
           showIcon
+          style={{ marginBottom: 16 }}
         />
       )}
 
-      <Table
-        dataSource={logs}
-        columns={columns}
-        rowKey="id"
-        loading={isLoading}
-        pagination={{
-          defaultPageSize: 15,
-          showSizeChanger: true,
-          pageSizeOptions: ["15", "30", "50"],
-          showTotal: (total, range) =>
-            `${range[0]}-${range[1]} of ${total} events logged`,
-        }}
-      />
+      <Card styles={{ body: { padding: 0 } }}>
+        <Table
+          dataSource={logs}
+          columns={columns}
+          rowKey="id"
+          loading={isLoading}
+          size="middle"
+          pagination={{
+            defaultPageSize: 15,
+            showSizeChanger: true,
+            pageSizeOptions: ["15", "30", "50"],
+            showTotal: (total, range) =>
+              `${range[0]}-${range[1]} of ${total} events`,
+          }}
+        />
+      </Card>
 
       {/* JSON Payload Inspector Modal */}
       <Modal
@@ -166,23 +183,26 @@ export const AuditLogsPage: React.FC = () => {
         open={!!selectedDetails}
         onCancel={() => setSelectedDetails(null)}
         footer={[
-          <Button key="close" onClick={() => setSelectedDetails(null)}>
+          <Button key="close" size="small" onClick={() => setSelectedDetails(null)}>
             Close
           </Button>,
         ]}
       >
         <pre
           style={{
-            background: "#f5f5f5",
-            padding: 16,
-            borderRadius: 8,
+            background: "#f9fafb",
+            border: "1px solid #e5e7eb",
+            padding: 12,
+            borderRadius: 6,
             overflowX: "auto",
-            maxHeight: 400,
+            maxHeight: 380,
+            fontSize: 12,
+            fontFamily: "ui-monospace, SFMono-Regular, monospace",
           }}
         >
           {JSON.stringify(selectedDetails, null, 2)}
         </pre>
       </Modal>
-    </Space>
+    </div>
   );
 };
